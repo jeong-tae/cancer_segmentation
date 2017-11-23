@@ -44,6 +44,7 @@ class Detector(object):
         for i in range(padding, shape[0]+padding):
             for j in range(padding, shape[1]+padding):
                 feature = pad_image[i-padding:i+padding, j-padding:j+padding].reshape((-1))
+                np.append(feature, [i, j]) # add location info
                 features.append(feature)
 
         features = np.concatenate(features, axis = 0)
