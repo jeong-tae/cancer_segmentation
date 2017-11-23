@@ -1,0 +1,11 @@
+data
+*.pyc
+*.png
+*.jpg
+*.jpeg
+*.xlsx
+*.zip
+*.cktp
+*.pkl
+*.csv
+*.swp
