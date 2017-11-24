@@ -5,30 +5,30 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_recall_fscore_support
 import _pickle as cPickle
 import random
+from tqdm import tqdm
 
 class Detector(object):
-    def __init__(self, filelist = "/home/jtlee/workspace/canser_segmentation/data/frames.txt", ckpt = None):
+    def __init__(self, filelist = "/home/jtlee/workspace/cancer_segmentation/frames2.txt", ckpt = None):
 
         self.n_jobs = 1
         self.n_estimators = 10 # hyper-param
         self.context_size = 3 # hyper-param
-        self.rf = RandomFroestClassifier(n_jobs = self.n_jobs, n_estimators = self.n_estimators)
+        self.rf = RandomForestClassifier(n_jobs = self.n_jobs, n_estimators = self.n_estimators)
 
         if ckpt != None:
             raise NotImplementedError("Not implemented behavior!")
 
-        self.dir_path = '/home/jtlee/workspace/canser_segmentation/data/'
+        self.dir_path = '/home/jtlee/workspace/cancer_segmentation/'
         file_paths = np.array(open(filelist).readlines())
 
         random.seed(1004)
         np.random.seed(1004)
-        random.shuffle(file_path)
+        random.shuffle(file_paths)
 
         split = np.random.uniform(0, 1, len(file_paths)) <= .9
 
         self.train_files = file_paths[split == True]
         self.test_files = file_paths[split == False]
-
         print(" [*] Number of observations in the training data:", len(self.train_files))
         print(" [*] Number of observations in the test data:", len(self.test_files))
 
@@ -43,7 +43,7 @@ class Detector(object):
         features = []
         for i in range(padding, shape[0]+padding):
             for j in range(padding, shape[1]+padding):
-                feature = pad_image[i-padding:i+padding, j-padding:j+padding].reshape((-1))
+                feature = pad_image[i-padding:i+padding+1, j-padding:j+padding+1].reshape((-1))
                 np.append(feature, [i, j]) # add location info
                 features.append(feature)
 
@@ -56,9 +56,9 @@ class Detector(object):
         gt_images = []
         for i in tqdm(range(len(self.train_files))):
             paired = self.train_files[i].split('\t')
-            img = cv2.imread(self.dir_path + paired[0].strip())
+            img = cv2.imread(self.dir_path + paired[0].strip(), cv2.IMREAD_GRAYSCALE)
             flat = self.context_feature(img, size = self.context_size)
-            gt_img = cv2.imread(self.dir_path + paired[1].strip())
+            gt_img = cv2.imread(self.dir_path + paired[1].strip(), cv2.IMREAD_GRAYSCALE)
 
             gt_img[gt_img > 0] = 1 # binarization
             gt_flat = gt_img.reshape((-1))
@@ -77,9 +77,9 @@ class Detector(object):
         gt_images = []
         for i in tqdm(range(len(self.test_files))):
             paired = self.test_files[i].split('\t')
-            img = cv2.imread(self.dir_path + paired[0].strip())
+            img = cv2.imread(self.dir_path + paired[0].strip(), cv2.IMREAD_GRAYSCALE)
             flat = self.context_featue(img, size = self.context_size)
-            gt_img = cv2.imread(self.dir_path + paired[1].strip())
+            gt_img = cv2.imread(self.dir_path + paired[1].strip(), cv2.IMREAD_GRAYSCALE)
 
             gt_img[gt_img > 0] = 1
             gt_flat = gt_img.reshape((-1))
@@ -108,7 +108,7 @@ class Detector(object):
         return np.array(mask)
 
     def inference(self, image_file):
-        img = cv2.imread(image_file) # gray
+        img = cv2.imread(image_file, cv2.IMREAD_GRAYSCALE) # gray
         img_shape = img.shape
         flat = self.context_featue(img, size = self.context_size)
 
@@ -121,7 +121,7 @@ class Detector(object):
         plt.show()
 
     def save(self, model, path = "/home/jtlee/workspace/cancer_segmentation/ckpt/", n = 0):
-        path = path + "ckpt_" + str(n) + ".pkl"
+        path = path + "ckpt2_" + str(n) + ".pkl"
         f = open(path, 'wb')
         cPickle.dump(model, f)
         f.close()
