@@ -73,12 +73,14 @@ class Detector(object):
 
     def validation(self):
         print(" [*] Validation...")
+        f = open("/home/jtlee/workspace/cancer_segmentation/ckpt/ckpt2_0.pkl", "rb")
+        self.rf = cPickle.load(f)
         images = []
         gt_images = []
         for i in tqdm(range(len(self.test_files))):
             paired = self.test_files[i].split('\t')
             img = cv2.imread(self.dir_path + paired[0].strip(), cv2.IMREAD_GRAYSCALE)
-            flat = self.context_featue(img, size = self.context_size)
+            flat = self.context_feature(img, size = self.context_size)
             gt_img = cv2.imread(self.dir_path + paired[1].strip(), cv2.IMREAD_GRAYSCALE)
 
             gt_img[gt_img > 0] = 1
@@ -91,8 +93,8 @@ class Detector(object):
         gt_images = np.concatenate(gt_images, axis = 0)
 
         pred = self.rf.predict(images)
-        prec, recall, f1, _ = precision_recall_fscore_support(gt_images, images, average = 'binary')
-        acc = (sum(gt_images == pred) / gt_flat.shape[0])
+        prec, recall, f1, _ = precision_recall_fscore_support(gt_images, pred, average = 'binary')
+        acc = (sum(gt_images == pred) / gt_images.shape[0])
 
         print(" [*] acc: %.3f, prec: %.2f, recall: %.2f, f1: %.3f"%(acc, prec, recall, f1))
         return f1
